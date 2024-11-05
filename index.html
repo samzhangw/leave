@@ -1,0 +1,923 @@
+<html><head><base href="." />
+<meta charset="UTF-8">
+<title>學生請假系統</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Loading Animation */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Confirmation dialog styles */
+.confirm-dialog {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.confirm-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    text-align: center;
+    animation: fadeIn 0.3s;
+}
+
+.confirm-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Admin modal styles */
+.admin-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+.admin-modal-content {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    margin: 15% auto;
+    padding: 20px;
+    width: 300px;
+    border-radius: 8px;
+    animation: fadeIn 0.3s;
+}
+
+.close-btn {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+    color: #000;
+}
+
+.admin-section {
+    display: none;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.approve-btn {
+    background: linear-gradient(45deg, #4CAF50, #2E7D32);
+}
+
+.reject-btn {
+    background: linear-gradient(45deg, #f44336, #d32f2f);
+}
+
+.admin-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.container:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2.5em;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h1:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(to right, #4CAF50, #45a049);
+}
+
+.form-group {
+    margin-bottom: 25px;
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.95em;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="password"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    font-size: 1em;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    transform: translateY(-2px);
+}
+
+textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+button {
+    background: linear-gradient(45deg, #4CAF50, #2E7D32);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+button:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+}
+
+button:hover:after {
+    transform: translateX(100%);
+    transition: all 0.6s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+.leave-records {
+    margin-top: 50px;
+}
+
+h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+h2:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #4CAF50;
+    border-radius: 2px;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    transition: all 0.3s ease;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+tr:hover td {
+    background: rgba(76, 175, 80, 0.05);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+.status-pending,
+.status-approved,
+.status-rejected {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.status-approved {
+    color: #27ae60;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: #e8f5e9;
+}
+
+.status-rejected {
+    color: #e74c3c;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: #ffebee;
+}
+
+.file-input-container {
+    margin-bottom: 15px;
+}
+
+.file-input-label {
+    display: inline-block;
+    padding: 12px 24px;
+    background: linear-gradient(45deg, #4CAF50, #2E7D32);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.file-input-label:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+}
+
+.image-preview {
+    max-width: 300px;
+    margin-top: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.image-preview img {
+    transition: all 0.3s ease;
+}
+
+.image-preview img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+    50% { box-shadow: 0 4px 25px rgba(76, 175, 80, 0.5); }
+    100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+}
+
+.form-group, .leave-records {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.form-group i, 
+th i {
+    margin-right: 8px;
+    color: #4CAF50;
+    transition: all 0.3s ease;
+}
+
+.form-group:hover i {
+    color: #45a049;
+    transform: scale(1.2) rotate(5deg);
+}
+
+.file-input-label i {
+    margin-right: 8px;
+}
+
+button i {
+    margin-right: 8px;
+}
+
+.form-group:hover i {
+    transform: scale(1.2);
+    transition: transform 0.3s ease;
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+    }
+    
+    h2 {
+        font-size: 1.5em;
+    }
+    
+    /* Form adjustments */
+    input[type="text"],
+    input[type="date"],
+    input[type="password"],
+    select,
+    textarea {
+        padding: 8px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Table responsive design */
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        padding: 8px;
+    }
+    
+    td {
+        border: none;
+        position: relative;
+        padding: 8px 8px 8px 50%;
+        text-align: right;
+    }
+    
+    td:before {
+        position: absolute;
+        left: 8px;
+        width: 45%;
+        padding-right: 10px;
+        text-align: left;
+        font-weight: bold;
+        content: attr(data-label);
+    }
+    
+    /* Admin modal adjustments */
+    .admin-modal-content {
+        width: 90%;
+        margin: 30% auto;
+    }
+    
+    /* Image preview adjustments */
+    .image-preview {
+        max-width: 100%;
+    }
+    
+    /* Button adjustments */
+    button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    /* Admin button position adjustment */
+    #adminLoginBtn {
+        position: static;
+        margin-bottom: 20px;
+        width: auto;
+    }
+}
+</style>
+</head>
+<body>
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="confirm-dialog">
+        <div class="confirm-content">
+            <h3>確認提交請假申請?</h3>
+            <div class="confirm-buttons">
+                <button id="confirmYes" class="admin-btn approve-btn">確認</button>
+                <button id="confirmNo" class="admin-btn reject-btn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>學生請假系統</h1>
+        
+        <button id="adminLoginBtn" class="admin-btn" style="position: fixed; top: 20px; right: 20px;">
+            <i class="fas fa-user-shield"></i> 管理員登入
+        </button>
+
+        <div id="adminModal" class="admin-modal">
+            <div class="admin-modal-content">
+                <span class="close-btn">&times;</span>
+                <h2>管理員登入</h2>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 帳號：</label>
+                    <input type="text" id="adminUsername">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 密碼：</label>
+                    <input type="password" id="adminPassword">
+                </div>
+                <button id="adminSubmitBtn"><i class="fas fa-sign-in-alt"></i> 登入</button>
+            </div>
+        </div>
+        
+        <form id="leaveForm">
+            <div class="form-group">
+                <label for="studentId"><i class="fas fa-id-card"></i> 學號：</label>
+                <input type="text" id="studentId" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="studentName"><i class="fas fa-user"></i> 姓名：</label>
+                <input type="text" id="studentName" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="leaveType"><i class="fas fa-list-alt"></i> 請假類型：</label>
+                <select id="leaveType" required>
+                    <option value="">請選擇請假類型</option>
+                    <option value="sick">病假</option>
+                    <option value="personal">事假</option>
+                    <option value="official">公假</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="startDate"><i class="fas fa-calendar-alt"></i> 開始日期：</label>
+                <input type="date" id="startDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="endDate"><i class="fas fa-calendar-alt"></i> 結束日期：</label>
+                <input type="date" id="endDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason"><i class="fas fa-comment-alt"></i> 請假原因：</label>
+                <textarea id="reason" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-file-alt"></i> 證明文件：</label>
+                <div class="file-input-container">
+                    <label class="file-input-label">
+                        <i class="fas fa-upload"></i> 選擇檔案
+                        <input type="file" id="proofImage" class="file-input" accept="image/*">
+                    </label>
+                    <div id="imagePreview"></div>
+                </div>
+            </div>
+            
+            <button type="submit"><i class="fas fa-paper-plane"></i> 提交請假申請</button>
+        </form>
+
+        <div class="leave-records">
+            <h2>請假紀錄</h2>
+            <table id="leaveRecords">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-id-card"></i> 學號</th>
+                        <th><i class="fas fa-user"></i> 姓名</th>
+                        <th><i class="fas fa-list-alt"></i> 請假類型</th>
+                        <th><i class="fas fa-calendar-alt"></i> 開始日期</th>
+                        <th><i class="fas fa-calendar-alt"></i> 結束日期</th>
+                        <th><i class="fas fa-check-circle"></i> 狀態</th>
+                        <th><i class="fas fa-file-alt"></i> 證明文件</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+// Google Apps Script Web App URL - Replace with your deployed web app URL
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU8n8QQa_8hLAC2iOJHRQEsU_-j1JwDX2VlYz__jgcJ_eOC2OshbbckTH0P-6WALjwUw/exec';
+
+let isAdmin = false;
+
+document.getElementById('adminLoginBtn').addEventListener('click', () => {
+    document.getElementById('adminModal').style.display = 'block';
+});
+
+document.querySelector('.close-btn').addEventListener('click', () => {
+    document.getElementById('adminModal').style.display = 'none';
+});
+
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('adminModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+document.getElementById('adminSubmitBtn').addEventListener('click', async () => {
+    const username = document.getElementById('adminUsername').value;
+    const password = document.getElementById('adminPassword').value;
+    
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'adminLogin',
+                username,
+                password
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            isAdmin = true;
+            document.getElementById('adminModal').style.display = 'none';
+            loadLeaveRecords(); // Reload records with admin actions
+            alert('登入成功！');
+        } else {
+            alert('登入失敗：帳號或密碼錯誤');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('登入時發生錯誤');
+    }
+});
+
+let currentImageFile = null;
+
+document.getElementById('proofImage').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        currentImageFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewDiv = document.getElementById('imagePreview');
+            previewDiv.innerHTML = `<img src="${e.target.result}" alt="證明文件預覽" class="image-preview">`;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+function showLoading() {
+    document.querySelector('.loading-overlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.querySelector('.loading-overlay').style.display = 'none';
+}
+
+function showConfirm(message, onConfirm) {
+    const dialog = document.querySelector('.confirm-dialog');
+    dialog.style.display = 'flex';
+    
+    document.getElementById('confirmYes').onclick = () => {
+        dialog.style.display = 'none';
+        onConfirm();
+    };
+    
+    document.getElementById('confirmNo').onclick = () => {
+        dialog.style.display = 'none';
+    };
+}
+
+// Modify the form submit event listener
+document.getElementById('leaveForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showConfirm('確認提交請假申請?', async () => {
+        showLoading();
+        
+        const studentId = document.getElementById('studentId').value;
+        const studentName = document.getElementById('studentName').value;
+        const leaveType = document.getElementById('leaveType').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const reason = document.getElementById('reason').value;
+
+        let imageData = null;
+        if (currentImageFile) {
+            imageData = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(currentImageFile);
+            });
+        }
+
+        const formData = {
+            studentId,
+            studentName,
+            leaveType,
+            startDate,
+            endDate,
+            reason,
+            proofImage: imageData
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(formData),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            
+            hideLoading();
+            
+            if (result.success) {
+                addLeaveRecord({
+                    ...formData,
+                    status: '待審核'
+                });
+                currentImageFile = null;
+                document.getElementById('imagePreview').innerHTML = '';
+                e.target.reset();
+                alert('請假申請已提交！');
+            } else {
+                alert('提交失敗：' + result.error);
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error:', error);
+            alert('提交時發生錯誤，請稍後再試。');
+        }
+    });
+});
+
+// Modify loadLeaveRecords to show loading
+async function loadLeaveRecords() {
+    showLoading();
+    try {
+        const response = await fetch(SCRIPT_URL + '?action=getRecords');
+        const records = await response.json();
+        
+        const tbody = document.querySelector('#leaveRecords tbody');
+        tbody.innerHTML = '';
+        records.forEach(record => addLeaveRecord(record));
+    } catch (error) {
+        console.error('Error loading records:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadLeaveRecords() {
+    showLoading();
+    try {
+        const response = await fetch(SCRIPT_URL + '?action=getRecords');
+        const records = await response.json();
+        
+        const tbody = document.querySelector('#leaveRecords tbody');
+        tbody.innerHTML = '';
+        records.forEach(record => addLeaveRecord(record));
+    } catch (error) {
+        console.error('Error loading records:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+function addLeaveRecord(record) {
+    const tbody = document.querySelector('#leaveRecords tbody');
+    const tr = document.createElement('tr');
+    
+    const leaveTypeMap = {
+        'sick': '病假',
+        'personal': '事假',
+        'official': '公假'
+    };
+
+    const statusClass = {
+        '待審核': 'status-pending',
+        '已核准': 'status-approved',
+        '已拒絕': 'status-rejected'
+    };
+
+    const adminActions = isAdmin ? 
+        `<td data-label="操作">
+            <div class="action-buttons">
+                <button onclick="handleAction('approve', '${record.id}')" class="admin-btn approve-btn">
+                    <i class="fas fa-check"></i> 核准
+                </button>
+                <button onclick="handleAction('reject', '${record.id}')" class="admin-btn reject-btn">
+                    <i class="fas fa-times"></i> 拒絕
+                </button>
+            </div>
+        </td>` : '';
+
+    const imageCell = record.proofImage ? 
+        `<td data-label="證明文件"><img src="${record.proofImage}" alt="證明文件" class="image-preview"></td>` :
+        '<td data-label="證明文件">無證明文件</td>';
+
+    tr.innerHTML = `
+        <td data-label="學號">${record.studentId}</td>
+        <td data-label="姓名">${record.studentName}</td>
+        <td data-label="請假類型">${leaveTypeMap[record.leaveType]}</td>
+        <td data-label="開始日期">${record.startDate}</td>
+        <td data-label="結束日期">${record.endDate}</td>
+        <td data-label="狀態" class="status-pending">${record.status}</td>
+        ${imageCell}
+        ${adminActions}
+    `;
+    
+    tbody.appendChild(tr);
+}
+
+// Load records when page loads
+window.onload = loadLeaveRecords;
+</script>
+
+<!-- Google Apps Script Code (to be deployed as a Web App):
+function doGet(e) {
+  if (e.parameter.action === 'getRecords') {
+    return getLeaveRecords();
+  }
+  return ContentService.createTextOutput('Invalid request');
+}
+
+function doPost(e) {
+    var data = JSON.parse(e.postData.contents);
+    
+    if (data.action === 'adminLogin') {
+        return adminLogin(data);
+    } else if (data.action === 'updateStatus') {
+        return updateLeaveStatus(data);
+    } else {
+        return saveLeaveRecord(data);
+    }
+}
+
+
+function getLeaveRecords() {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var records = sheet.getDataRange().getValues();
+    // Remove header row
+    records.shift();
+    
+    var formattedRecords = records.map(function(row) {
+        return {
+            studentId: row[0],
+            studentName: row[1],
+            leaveType: row[2],
+            startDate: row[3],
+            endDate: row[4],
+            reason: row[5],
+            status: row[6],
+            proofImage: row[7],
+            id: row[8] // Added for record ID reference
+        };
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify(formattedRecords))
+
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function saveLeaveRecord(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  
+  sheet.appendRow([
+    data.studentId,
+    data.studentName,
+    data.leaveType,
+    data.startDate,
+    data.endDate,
+    data.reason,
+    '待審核',
+    data.proofImage
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    message: 'Record saved successfully'
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+-->
+</body></html>
